@@ -5,8 +5,10 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Literal
+from datetime import date
 
 app = FastAPI()
+
 class BankAccount(BaseModel):
     id: int
     type: Literal["business", "personal"]
@@ -37,3 +39,28 @@ def get_bank_account(account_id: int):
 def delete_bank_account(account_id: int):
     bank_accounts[:] = [account for account in bank_accounts if account.id != account_id]
     return {"message": "Bank account deleted successfully"}
+
+class PaymentResource(BaseModel):
+    id: str
+    from_account_id: int
+    to_account_id: int
+    amount_in_euros: int
+    payment_date: date
+
+payment_resources: list[PaymentResource] = []
+
+@app.post("/payment-resources/")
+def create_payment_resource(resource: PaymentResource):
+    payment_resources.append(resource)
+    return {"message": "Payment resource created successfully"}
+
+@app.get("/payment-resources/")
+def get_payment_resources():
+    return payment_resources
+
+@app.get("/payment-resources/{resource_id}")
+def get_payment_resource(resource_id: str):
+    for resource in payment_resources:
+        if resource.id == resource_id:
+            return resource
+    return {"message": "Such payment resource was not found"}
