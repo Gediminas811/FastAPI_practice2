@@ -1,4 +1,4 @@
-# a fastapi system for Bank Account creating and management
+# a fastapi system for Bank accounts and Payment resources creating/management
 # check Python version: must be 3.11.9
 # to run this code, use command 'fastapi dev fastapi_bank_acc.py'
 
@@ -9,13 +9,18 @@ from datetime import date
 
 app = FastAPI()
 
+def to_lowercase(s: str) -> str:
+    return s.lower()
+
 class BankAccount(BaseModel):
     id: int
     type: Literal["business", "personal"]
     person_name: str
     address: str
 
-# type hint for a list of BankAccounts
+    class Config:
+        alias_generator = to_lowercase
+        populate_by_name = True
 
 bank_accounts: list[BankAccount] = []
 
@@ -46,6 +51,10 @@ class PaymentResource(BaseModel):
     to_account_id: int
     amount_in_euros: int
     payment_date: date
+
+class Config:
+        alias_generator = to_lowercase
+        populate_by_name = True
 
 payment_resources: list[PaymentResource] = []
 
