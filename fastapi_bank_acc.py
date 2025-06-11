@@ -1,4 +1,5 @@
 # a fastapi system for Bank accounts and Payment resources creating/management
+# information about bank accounts and payment resources is stored in database files .txt
 # check Python version: must be 3.11.9
 # to run this code, use command 'fastapi dev fastapi_bank_acc.py'
 
@@ -85,6 +86,30 @@ class PaymentResource(BaseModel):
 class Config:
         alias_generator = to_lowercase
         populate_by_name = True
+
+def write_payment_to_file(payment: PaymentResource):
+    with open("payments_database.txt", "a") as file:
+        file.write(f"{payment.id}, {payment.from_account_id}, {payment.to_account_id}, {payment.amount_in_euros}, {payment.payment_date}\n")
+
+def read_payments_from_file():
+    payments = []
+    with open("payments_database.txt", "r") as file:
+        for line in file:
+            id, from_account_id, to_account_id, amount_in_euros, payment_date = line.strip().split(", ")
+            payments.append(PaymentResource(id=id, from_account_id=int(from_account_id), to_account_id=int(to_account_id), amount_in_euros=int(amount_in_euros), payment_date=date.fromisoformat(payment_date)))
+
+    return payments
+
+def delete_payments_from_file(payment_id_to_delete: str):
+    payments = read_payments_from_file()
+    payments = [payment for payment in payments if payment.id != payment_id_to_delete]
+    
+    with open("payments_database.txt", "w") as file:
+        for payment in payments:
+            file.write(f"{payment.id}, {payment.from_account_id}, {payment.to_account_id}, {payment.amount_in_euros}, {payment.payment_date}\n")
+
+if not os.path.exists("payments_database.txt"):
+        open("payments_database.txt", "w").close()
 
 payment_resources: list[PaymentResource] = []
 
