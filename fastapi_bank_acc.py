@@ -2,6 +2,7 @@
 # check Python version: must be 3.11.9
 # to run this code, use command 'fastapi dev fastapi_bank_acc.py'
 
+import os
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Literal
@@ -22,11 +23,40 @@ class BankAccount(BaseModel):
         alias_generator = to_lowercase
         populate_by_name = True
 
+def write_account_to_file(account: BankAccount):
+    with open("accounts_database.txt", "a") as file:
+        file.write(f"{account.id}, {account.type}, {account.person_name}, {account.address}\n")
+
+def read_accounts_from_file():
+    accounts = []
+    with open("accounts_database.txt", "r") as file:
+        for line in file:
+            id, type_str, person_name, address = line.strip().split(", ")
+            type_literal = type_str if type_str in ("business", "personal") else "personal"
+            accounts.append(BankAccount(id=int(id), type=type_literal, person_name=person_name, address=address))
+
+    return accounts
+
+def delete_account_from_file(account_id_to_delete: int):
+    accounts = read_accounts_from_file()
+    accounts = [account for account in accounts if account.id != account_id_to_delete]
+    
+    with open("accounts_database.txt", "w") as file:
+        for account in accounts:
+            file.write(f"{account.id}, {account.type}, {account.person_name}, {account.address}\n")
+
+if not os.path.exists("accounts_database.txt"):
+        open("accounts_database.txt", "w").close()
+
+# type hint for a list of accounts
+accounts:list[BankAccount] = read_accounts_from_file()
+
 bank_accounts: list[BankAccount] = []
 
 @app.post("/bank-accounts/")
 def create_bank_account(account: BankAccount):
     bank_accounts.append(account)
+    write_account_to_file(account)
     return {"message": "Bank account created successfully"}
 
 @app.get("/bank-accounts/")

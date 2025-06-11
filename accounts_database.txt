@@ -1,0 +1,3 @@
+0, business, Gediminas, Kaunas
+1, personal, Aida, Vilnius
+2, personal, Jonas, Vilnius
