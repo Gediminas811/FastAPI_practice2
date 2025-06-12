@@ -11,20 +11,13 @@ from datetime import date
 
 app = FastAPI()
 
-def to_lowercase(s: str) -> str:
-    return s.lower()
-
-class BankAccount(BaseModel):
+class Account(BaseModel):
     id: int
     type: Literal["business", "personal"]
     person_name: str
     address: str
-
-    class Config:
-        alias_generator = to_lowercase
-        populate_by_name = True
-
-def write_account_to_file(account: BankAccount):
+   
+def write_account_to_file(account: Account):
     with open("accounts_database.txt", "a") as file:
         file.write(f"{account.id}, {account.type}, {account.person_name}, {account.address}\n")
 
@@ -34,7 +27,7 @@ def read_accounts_from_file():
         for line in file:
             id, type_str, person_name, address = line.strip().split(", ")
             type_literal = type_str if type_str in ("business", "personal") else "personal"
-            accounts.append(BankAccount(id=int(id), type=type_literal, person_name=person_name, address=address))
+            accounts.append(Account(id=int(id), type=type_literal, person_name=person_name, address=address))
 
     return accounts
 
@@ -50,12 +43,12 @@ if not os.path.exists("accounts_database.txt"):
         open("accounts_database.txt", "w").close()
 
 # type hint for a list of accounts
-accounts:list[BankAccount] = read_accounts_from_file()
+accounts:list[Account] = read_accounts_from_file()
 
-bank_accounts: list[BankAccount] = []
+bank_accounts: list[Account] = []
 
 @app.post("/bank-accounts/")
-def create_bank_account(account: BankAccount):
+def create_bank_account(account: Account):
     bank_accounts.append(account)
     write_account_to_file(account)
     return {"message": "Bank account created successfully"}
@@ -76,18 +69,14 @@ def delete_bank_account(account_id: int):
     bank_accounts[:] = [account for account in bank_accounts if account.id != account_id]
     return {"message": "Bank account deleted successfully"}
 
-class PaymentResource(BaseModel):
-    id: str
+class Payment(BaseModel):
+    id: int
     from_account_id: int
     to_account_id: int
     amount_in_euros: int
     payment_date: date
 
-class Config:
-        alias_generator = to_lowercase
-        populate_by_name = True
-
-def write_payment_to_file(payment: PaymentResource):
+def write_payment_to_file(payment: Payment):
     with open("payments_database.txt", "a") as file:
         file.write(f"{payment.id}, {payment.from_account_id}, {payment.to_account_id}, {payment.amount_in_euros}, {payment.payment_date}\n")
 
@@ -96,11 +85,11 @@ def read_payments_from_file():
     with open("payments_database.txt", "r") as file:
         for line in file:
             id, from_account_id, to_account_id, amount_in_euros, payment_date = line.strip().split(", ")
-            payments.append(PaymentResource(id=id, from_account_id=int(from_account_id), to_account_id=int(to_account_id), amount_in_euros=int(amount_in_euros), payment_date=date.fromisoformat(payment_date)))
+            payments.append(Payment(id=int(id), from_account_id=int(from_account_id), to_account_id=int(to_account_id), amount_in_euros=int(amount_in_euros), payment_date=date.fromisoformat(payment_date)))
 
     return payments
 
-def delete_payments_from_file(payment_id_to_delete: str):
+def delete_payments_from_file(payment_id_to_delete: int):
     payments = read_payments_from_file()
     payments = [payment for payment in payments if payment.id != payment_id_to_delete]
     
@@ -111,20 +100,21 @@ def delete_payments_from_file(payment_id_to_delete: str):
 if not os.path.exists("payments_database.txt"):
         open("payments_database.txt", "w").close()
 
-payment_resources: list[PaymentResource] = []
+payments: list[Payment] = []
 
-@app.post("/payment-resources/")
-def create_payment_resource(resource: PaymentResource):
-    payment_resources.append(resource)
-    return {"message": "Payment resource created successfully"}
+@app.post("/payments/")
+def create_payment(resource: Payment):
+    payments.append(resource)
+    write_payment_to_file(resource)
+    return {"message": "Payment created successfully"}
 
-@app.get("/payment-resources/")
-def get_payment_resources():
-    return payment_resources
+@app.get("/payments/")
+def get_payments():
+    return payments
 
-@app.get("/payment-resources/{resource_id}")
-def get_payment_resource(resource_id: str):
-    for resource in payment_resources:
-        if resource.id == resource_id:
+@app.get("/payments/{payment_id}")
+def get_payment(payment_id: int):
+    for resource in payments:
+        if resource.id == payment_id:
             return resource
-    return {"message": "Such payment resource was not found"}
+    return {"message": "Such payment was not found"}
