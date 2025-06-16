@@ -120,51 +120,9 @@ def get_payment(payment_id: int):
     return {"message": "Such payment was not found"}
 
 class Report(BaseModel):
-    id: int
     from_person_name: str
     to_person_name: str
     amount_in_euros: int
-    payment: int
+    payment_date: date
 
-def write_reports_to_file(report: Report):
-    with open("reports_database.txt", "a") as file:
-        file.write(f"{report.id}, {report.from_person_name}, {report.to_person_name}, {report.amount_in_euros}, {report.payment}\n")
 
-def read_reports_from_file():
-    reports = []
-    with open("reports_database.txt", "r") as file:
-        for line in file:
-            id, from_person_name, to_person_name, amount_in_euros, payment = line.strip().split(", ")
-            reports.append(Report(id=int(id), from_person_name=from_person_name, to_person_name=to_person_name, amount_in_euros=int(amount_in_euros), payment=int(payment)))
-
-    return reports
-
-def delete_reports_from_file(report_id_to_delete: int):
-    reports = read_reports_from_file()
-    reports = [report for report in reports if report.id != report_id_to_delete]
-
-    with open("reports_database.txt", "w") as file:
-        for report in reports:
-            file.write(f"{report.id}, {report.from_person_name}, {report.to_person_name}, {report.amount_in_euros}, {report.payment}\n")
-
-if not os.path.exists("reports_database.txt"):
-        open("reports_database.txt", "w").close()
-
-reports: list[Report] = []
-
-@app.post("/reports/")
-def create_report(resource: Report):
-    reports.append(resource)
-    write_reports_to_file(resource)
-    return {"message": "Report created successfully"}
-
-@app.get("/reports/")
-def get_reports():
-    return reports
-
-@app.get("/reports/{report_id}")
-def get_report(report_id: int):
-    for resource in reports:
-        if resource.id == report_id:
-            return resource
-    return {"message": "Such report was not found"}
